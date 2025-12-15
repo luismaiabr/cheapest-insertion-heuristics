@@ -26,7 +26,6 @@ cheapest-insertion-heuristics/
 ├── main.py                          # Main execution script
 ├── Graph.py                         # Graph class with insertion logic
 ├── Product.py                       # Product data loader and affinity calculations
-├── cheapest_insertion_main.ipynb   # Jupyter notebook with alternative implementation
 ├── data.xlsx                        # Excel file with affinity matrix (not in repo)
 ├── pyproject.toml                   # Project dependencies
 └── README.md                        # This file
@@ -74,25 +73,22 @@ pydantic >= 2.12.5
 ```
 
 ## Installation
+## Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/luismaiabr/cheapest-insertion-heuristics.git
 cd cheapest-insertion-heuristics
 
-# Install dependencies (using pip)
-pip install pandas openpyxl matplotlib pydantic
-
-# Or using poetry
+# Install dependencies using poetry
 poetry install
 ```
 
 ## Usage
 
 ```bash
-python main.py
+poetry run python main.py
 ```
-
 ### Output
 
 The script will output:
@@ -125,17 +121,10 @@ print(f"Inserted nodes: {graph.inserted_nodes}")
 print(f"Total affinity: {graph.calculate_total_affinity()}")
 ```
 
-## Jupyter Notebook
+print(f"Total affinity: {graph.calculate_total_affinity()}")
+```
 
-The `cheapest_insertion_main.ipynb` notebook contains an alternative implementation with:
-- Visualization using matplotlib
-- Step-by-step execution
-- Distance-based example (6 cities)
-
-## Known Limitations
-
-⚠️ **Current Issues**:
-- Edge representation uses directed tuples `(i, j)`, which can cause lookup failures when edge is stored as `(j, i)`
+## Known Limitationsn uses directed tuples `(i, j)`, which can cause lookup failures when edge is stored as `(j, i)`
 - No guarantee of tour continuity (edges stored as list, not ordered sequence)
 - `main.py` only runs 10 iterations instead of all 46 remaining products
 - Silent exception handling may hide bugs
