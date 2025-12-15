@@ -1,95 +1,158 @@
-# Cheapest Insertion TSP Heuristic
+# Cheapest Insertion Heuristic for Product Affinity Optimization
 
-⚠️ **ALPHA VERSION** - This is an alpha/preliminary version. I didn't have time to polish the code or documentation yet.
+A Python implementation of the Cheapest Insertion Heuristic algorithm for optimizing product arrangement based on affinity scores. This project finds an optimal sequence of 49 products that maximizes total affinity between adjacent items.
 
 ## Overview
 
-This repository contains a Python implementation of the **Cheapest Insertion Heuristic** for solving the Traveling Salesman Problem (TSP). The algorithm builds a tour by iteratively adding cities at positions that minimize the total distance increase.
+This implementation uses a graph-based approach to solve a product placement optimization problem. Given a 49×50 affinity matrix representing compatibility scores between products, the algorithm constructs a tour that maximizes the sum of affinities between consecutive products.
 
 ## Algorithm Description
 
-The Cheapest Insertion Heuristic is a constructive algorithm for the TSP that works as follows:
+The Cheapest Insertion Heuristic works as follows:
 
-1. **Initialization**: Start with a small tour of 3 cities forming a triangle
-2. **Iterative Insertion**: For each remaining city:
-   - Calculate the cost of inserting it at each possible position in the current tour
-   - Insert the city at the position with minimum cost increase
-3. **Repeat**: Continue until all cities are included in the tour
+1. **Initialization**: Find the triplet of products (i, j, k) with minimum total aversion (negative affinity)
+2. **Iterative Insertion**: For each remaining product:
+   - Evaluate the cost of inserting it between each pair of adjacent products in the current sequence
+   - Insert the product at the position that minimizes the aversion increase
+   - Cost calculation: `aversion(i, new) + aversion(new, j) - aversion(i, j)`
+3. **Repeat**: Continue until all 49 products are inserted into the sequence
 
-The algorithm provides a reasonable approximation for the TSP in polynomial time, making it suitable for small to medium-sized problem instances.
+This greedy approach provides a good approximation in polynomial time: O(n³) for initialization and O(n²) per insertion.
+
+## Project Structure
+
+```
+cheapest-insertion-heuristics/
+├── main.py                          # Main execution script
+├── Graph.py                         # Graph class with insertion logic
+├── Product.py                       # Product data loader and affinity calculations
+├── cheapest_insertion_main.ipynb   # Jupyter notebook with alternative implementation
+├── data.xlsx                        # Excel file with affinity matrix (not in repo)
+├── pyproject.toml                   # Project dependencies
+└── README.md                        # This file
+```
 
 ## Implementation Details
 
-### Main Components
+### Core Classes
 
-- **`Distances` class**: Manages the distance matrix, city coordinates, and tour construction
-  - `distances`: 6x6 matrix representing distances between cities (cities 0-5)
-  - `city_coords`: Coordinates for visualization
-  - `tour`: Current tour as an ordered list of cities
-  - `linked_cities`: Set of edges representing connections in the tour
+#### `Product` (Product.py)
+- Loads affinity data from Excel file (`data.xlsx`)
+- Validates 49×50 dataframe structure using Pydantic
+- Provides methods:
+  - `calculate_affinity(p1, p2)`: Returns affinity score between products
+  - `calculate_aversion(p1, p2)`: Returns negative affinity (cost)
 
-### Key Methods
+#### `Graph` (Graph.py)
+- Manages the product insertion sequence
+- Key attributes:
+  - `inserted_nodes`: Set of products already in the sequence
+  - `inserted_edges`: List of tuples representing adjacent product pairs
+  - `product`: Reference to Product instance
+- Key methods:
+  - `get_initial_smallest_aversion_three_inserted_edges()`: Finds optimal starting triplet
+  - `next_cheapest_insertion_edge()`: Finds best (product, position) to insert next
+  - `add_edge()`: Inserts product into sequence and updates edges
+  - `calculate_total_affinity()`: Computes sum of all edge affinities
 
-- `get_total_distance()`: Calculates the total distance of the current tour
-- `tour_to_edges(tour)`: Converts an ordered tour list to a set of edges
-- `get_distance(i, j)`: Returns the distance between cities i and j
-- `get_initial_tour()`: Initializes the algorithm with a 3-city triangle
-- **Cheapest insertion logic**: Finds the optimal position to insert each remaining city
+### Data Format
 
-### Visualization
-
-The implementation includes visualization using `matplotlib` to display:
-- Cities as numbered points
-- Current tour edges
-- Step-by-step construction of the solution
+The `data.xlsx` file must contain:
+- A sheet named `'affinity'`
+- Columns B through AY (50 columns)
+- 49 rows of numeric affinity scores
+- Header row (skipped during loading)
 
 ## Requirements
 
 ```
-python >= 3.6
-matplotlib
+python >= 3.10
+pandas >= 2.3.3
+openpyxl >= 3.1.5
+matplotlib >= 3.10.8
+pydantic >= 2.12.5
+```
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/luismaiabr/cheapest-insertion-heuristics.git
+cd cheapest-insertion-heuristics
+
+# Install dependencies (using pip)
+pip install pandas openpyxl matplotlib pydantic
+
+# Or using poetry
+poetry install
 ```
 
 ## Usage
 
-The notebook can be run in:
-- Google Colab (recommended)
-- Jupyter Notebook
-- Any Python environment with matplotlib support
+```bash
+python main.py
+```
 
-Simply open `Cheapest_insertion (1).ipynb` and run all cells to see the algorithm in action with the provided example problem.
+### Output
 
-## Example Problem
+The script will output:
+```
+Final inserted nodes: {0, 1, 2, ..., 48}
+Final affinity: <total_affinity_score>
+```
 
-The included example uses a 6-city problem with:
-- Cities numbered 0-5
-- Predefined distance matrix
-- 2D coordinates for visualization
+Plus detailed logging showing each insertion step (when DEBUG logging is enabled).
 
-## Limitations & Future Work
+## Example
 
-Since this is an alpha version:
-- Limited documentation and comments in code
-- Hardcoded example problem (6 cities)
-- No command-line interface or configurable inputs
-- Visualization could be improved
-- No performance optimization
-- Missing unit tests
+```python
+from Product import Product
+from Graph import Graph
 
-## References
+# Load product affinity data
+product = Product()
 
-The Cheapest Insertion Heuristic is a well-known TSP approximation algorithm. For more information on TSP heuristics and optimization:
-- Rosenkrantz, D. J., Stearns, R. E., & Lewis, P. M. (1977). "An analysis of several heuristics for the traveling salesman problem"
-- General TSP literature on constructive heuristics
+# Initialize graph with optimal starting triplet
+graph = Graph(product)
 
-## License
+# Perform insertions
+for _ in range(10):  # Insert 10 products
+    best_edge, min_aversion = graph.next_cheapest_insertion_edge()
+    graph.add_edge(best_edge)
 
-[Add your preferred license]
+# View results
+print(f"Inserted nodes: {graph.inserted_nodes}")
+print(f"Total affinity: {graph.calculate_total_affinity()}")
+```
+
+## Jupyter Notebook
+
+The `cheapest_insertion_main.ipynb` notebook contains an alternative implementation with:
+- Visualization using matplotlib
+- Step-by-step execution
+- Distance-based example (6 cities)
+
+## Known Limitations
+
+⚠️ **Current Issues**:
+- Edge representation uses directed tuples `(i, j)`, which can cause lookup failures when edge is stored as `(j, i)`
+- No guarantee of tour continuity (edges stored as list, not ordered sequence)
+- `main.py` only runs 10 iterations instead of all 46 remaining products
+- Silent exception handling may hide bugs
+
+## Future Improvements
+
+- [ ] Refactor to use ordered tour list instead of edge tuples
+- [ ] Add visualization of final product sequence
+- [ ] Implement tour validation checks
+- [ ] Add unit tests
+- [ ] Support for different optimization objectives
+- [ ] Performance benchmarking
 
 ## Author
 
-[Your name/contact]
+Luis Maia (luismaiasombra@gmail.com)
 
----
+## License
 
-*Note: This is a work in progress. Contributions, suggestions, and improvements are welcome!*
+Not specified - see repository for details.
